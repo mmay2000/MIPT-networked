@@ -3,7 +3,6 @@
 #include <sys/select.h>
 #include <netdb.h>
 #include <fcntl.h>
-#include <unistd.h>
 #include <cstring>
 #include <stdio.h>
 
