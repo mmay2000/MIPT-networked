@@ -52,3 +52,5 @@
 /.vs/CMakeWorkspaceSettings.json
 /.vs/ProjectSettings.json
 /.vs/slnx.sqlite
+*.bin
+/.vs/VSWorkspaceState.json
