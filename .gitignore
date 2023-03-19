@@ -48,3 +48,7 @@
 *.db-shm
 *.db-wal
 *.opendb
+/.vs/slnx.sqlite-journal
+/.vs/CMakeWorkspaceSettings.json
+/.vs/ProjectSettings.json
+/.vs/slnx.sqlite
