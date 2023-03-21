@@ -32,6 +32,7 @@ void on_snapshot(ENetPacket *packet)
 {
   uint16_t eid = invalid_entity;
   float x = 0.f; float y = 0.f;
+  float size;
   deserialize_snapshot(packet, eid, x, y);
   // TODO: Direct adressing, of course!
   for (Entity &e : entities)
@@ -68,9 +69,10 @@ int main(int argc, const char **argv)
     return 1;
   }
 
-  int width = 1920;
-  int height = 1080;
-  InitWindow(width, height, "w6 AI MIPT");
+  int width = win_width;
+  int height = win_height;
+
+  InitWindow(width, height, "w4 MIPT");
 
   const int scrWidth = GetMonitorWidth(0);
   const int scrHeight = GetMonitorHeight(0);

@@ -54,3 +54,13 @@
 /.vs/slnx.sqlite
 *.bin
 /.vs/VSWorkspaceState.json
+*.stamp
+*.depend
+*.cmake
+/3rdParty/networked-3rdparty.sln
+*.rule
+*.c
+/CMakeFiles/3.23.22060601-MSVC_2/CompilerIdCXX/CMakeCXXCompilerId.cpp
+*.check_cache
+*.list
+/networked.sln
