@@ -11,6 +11,36 @@
 static std::vector<Entity> entities;
 static uint16_t my_entity = invalid_entity;
 
+void on_my_entity_eat(ENetPacket* packet)
+{
+    uint16_t eid = invalid_entity;
+    float bodySize = 10.f;
+    float size;
+    deserialize_entity_eat(packet, eid, bodySize);
+    // TODO: Direct adressing, of course!
+    for (Entity& e : entities)
+        if (e.eid == eid)
+        {
+            e.bodySize = bodySize;
+        }
+}
+
+void on_my_entity_eaten(ENetPacket* packet)
+{
+    uint16_t eid = invalid_entity;
+    float x = 0.f; float y = 0.f; float bodySize = 10.f;
+    float size;
+    deserialize_eaten_entity(packet, eid, x, y, bodySize);
+    // TODO: Direct adressing, of course!
+    for (Entity& e : entities)
+        if (e.eid == eid)
+        {
+            e.x = x;
+            e.y = y;
+            e.bodySize = bodySize;
+        }
+}
+
 void on_new_entity_packet(ENetPacket *packet)
 {
   Entity newEntity;
@@ -31,15 +61,16 @@ void on_set_controlled_entity(ENetPacket *packet)
 void on_snapshot(ENetPacket *packet)
 {
   uint16_t eid = invalid_entity;
-  float x = 0.f; float y = 0.f;
+  float x = 0.f; float y = 0.f; float bodySize = 10.f;
   float size;
-  deserialize_snapshot(packet, eid, x, y);
+  deserialize_snapshot(packet, eid, x, y, bodySize);
   // TODO: Direct adressing, of course!
   for (Entity &e : entities)
     if (e.eid == eid)
     {
       e.x = x;
       e.y = y;
+      e.bodySize = bodySize;
     }
 }
 
@@ -117,7 +148,14 @@ int main(int argc, const char **argv)
         case E_SERVER_TO_CLIENT_SNAPSHOT:
           on_snapshot(event.packet);
           break;
+        case E_SERVER_TO_CLIENT_CONTROLLED_ENTITY_EATEN:
+            on_my_entity_eaten(event.packet);
+            break;
+        case E_SERVER_TO_CLIENT_CONTROLLED_ENTITY_EAT:
+            on_my_entity_eat(event.packet);
+            break;
         };
+        enet_packet_destroy(event.packet);
         break;
       default:
         break;
@@ -141,14 +179,14 @@ int main(int argc, const char **argv)
           send_entity_state(serverPeer, my_entity, e.x, e.y);
         }
     }
-
+    
 
     BeginDrawing();
       ClearBackground(GRAY);
       BeginMode2D(camera);
         for (const Entity &e : entities)
         {
-          const Rectangle rect = {e.x, e.y, 10.f, 10.f};
+          const Rectangle rect = {e.x, e.y, e.bodySize, e.bodySize };
           DrawRectangleRec(rect, GetColor(e.color));
         }
 

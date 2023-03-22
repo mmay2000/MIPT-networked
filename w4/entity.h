@@ -21,8 +21,11 @@ struct Entity
   float x = 0.f;
   float y = 0.f;
   uint16_t eid = invalid_entity;
+  float bodySize = 10.f;
   float size = min_size;
   EntityType type = EntityType::NONE;
+  float destinationX = 0.f; //destination for AI
+  float destinationY = 0.f;
 };
 
 

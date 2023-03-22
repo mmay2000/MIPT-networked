@@ -64,3 +64,15 @@
 *.check_cache
 *.list
 /networked.sln
+/3rdParty/3rdParty/enet/enet.sln
+*.pc
+/3rdParty/3rdParty/raylib/raylib/external/glfw/GLFW.sln
+/3rdParty/3rdParty/raylib/raylib/include/raylib.h
+/3rdParty/3rdParty/raylib/raylib/include/raymath.h
+/3rdParty/3rdParty/raylib/raylib/include/rlgl.h
+/3rdParty/3rdParty/raylib/raylib.sln
+/3rdParty/3rdParty/networked-3rdparty.sln
+/3rdParty/CMakeFiles/3.23.22060601-MSVC_2/CompilerIdCXX/CMakeCXXCompilerId.cpp
+/build
+/3rdParty/w4
+/3rdParty/networked.sln
