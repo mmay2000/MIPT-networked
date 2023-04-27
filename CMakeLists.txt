@@ -15,3 +15,4 @@ add_subdirectory(3rdParty)
 
 add_subdirectory(w4)
 add_subdirectory(w5)
+add_subdirectory(w7)
