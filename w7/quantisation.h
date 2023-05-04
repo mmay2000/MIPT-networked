@@ -157,6 +157,7 @@ uint32_t read_packing_uint32(void* ptr)
         return (uint32_t)((( * (uint32_t*)ptr) - 3) >> 2);
 }
 
+/*
 void check_uint32_compression()
 {
 	uint32_t a = 123;
@@ -176,3 +177,4 @@ void check_uint32_compression()
 	if (read_packing_uint32(packed_int4) == NULL)
 		printf(" %d id uncompessiable\n", a);
 }
+*/

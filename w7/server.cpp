@@ -55,7 +55,7 @@ void on_input(ENetPacket* packet)
 
 int main(int argc, const char** argv)
 {
-    check_uint32_compression();
+    //check_uint32_compression();
     srand(time(NULL));
     if (enet_initialize() != 0)
     {

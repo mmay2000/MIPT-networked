@@ -24,12 +24,14 @@ void send_new_entity(ENetPeer* peer, const Entity& ent)
 
 void send_set_controlled_entity(ENetPeer* peer, uint16_t eid)
 {
-    ENetPacket* packet = enet_packet_create(nullptr, sizeof(uint8_t) + sizeof(uint16_t),
+    ENetPacket* packet = enet_packet_create(nullptr, sizeof(uint8_t) + sizeof(uint16_t), //+ sizeof(uint8_t),
         ENET_PACKET_FLAG_RELIABLE);
-    uint8_t* ptr = packet->data;
-    *ptr = E_SERVER_TO_CLIENT_SET_CONTROLLED_ENTITY; ptr += sizeof(uint8_t);
-    memcpy(ptr, &eid, sizeof(uint16_t)); ptr += sizeof(uint16_t);
-
+    CustomBitstream bs(packet->data);
+    bs.write(E_SERVER_TO_CLIENT_SET_CONTROLLED_ENTITY);
+    bs.write(eid);
+   // uint32_t a = 123;
+    //printf("%d", a);
+   // bs.write_packing_uint32(a);
     enet_peer_send(peer, 0, packet);
 }
 
@@ -89,8 +91,12 @@ void deserialize_new_entity(ENetPacket* packet, Entity& ent)
 
 void deserialize_set_controlled_entity(ENetPacket* packet, uint16_t& eid)
 {
-    uint8_t* ptr = packet->data; ptr += sizeof(uint8_t);
-    eid = *(uint16_t*)(ptr); ptr += sizeof(uint16_t);
+    MessageType skip;
+    CustomBitstream bs(packet->data);
+    bs.read(skip);
+    bs.read(eid);
+   // uint32_t a = bs.read_packing_uint32();
+   // printf("\n%d", a);
 }
 
 void deserialize_entity_input(ENetPacket* packet, uint16_t& eid, float& thr, float& steer)
