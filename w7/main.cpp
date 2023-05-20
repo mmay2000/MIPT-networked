@@ -10,6 +10,7 @@
 #include "protocol.h"
 
 
+static std::vector<Input> input_history;
 static std::vector<Entity> entities;
 static uint16_t my_entity = invalid_entity;
 
@@ -44,8 +45,32 @@ void on_snapshot(ENetPacket* packet)
         }
 }
 
+uint16_t on_input_ac(ENetPacket* packet)
+{
+    uint16_t new_approved_id = 0;
+    deserialize_input_ac(packet, new_approved_id);
+    return new_approved_id;
+}
+
+void on_general_snapshot(ENetPacket* packet, ENetPeer* peer)
+{
+    //std::vector<Entity> entities_snapshot;
+    uint16_t new_id;
+    deserialize_general_snapshot(packet, entities, new_id);
+
+    send_general_snapshot_ac(peer, my_entity, new_id);
+}
+
 int main(int argc, const char** argv)
 {
+    uint16_t inp_id = 0;
+    uint16_t approved_id = 0;
+    Input inp;
+    inp.id = inp_id;
+    inp.steer = 0;
+    inp.thr = 0;
+    input_history.push_back(inp);
+
     if (enet_initialize() != 0)
     {
         printf("Cannot init ENet");
@@ -119,6 +144,14 @@ int main(int argc, const char** argv)
                 case E_SERVER_TO_CLIENT_SNAPSHOT:
                     on_snapshot(event.packet);
                     break;
+                case E_SERVER_TO_CLIENT_AC_INPUT_ID:
+                    approved_id = on_input_ac(event.packet);
+                    while (input_history.at(0).id != approved_id) //clear history
+                        input_history.erase(input_history.begin());
+                    break;
+                case E_SERVER_TO_CLIENT_GENERAL_SNAPSHOT:
+                    on_general_snapshot(event.packet, event.peer);
+                    break;
                 };
                 break;
             default:
@@ -136,18 +169,51 @@ int main(int argc, const char** argv)
                 if (e.eid == my_entity)
                 {
                     // Update
-                    float thr = (up ? 1.f : 0.f) + (down ? -1.f : 0.f);
-                    float steer = (left ? -1.f : 0.f) + (right ? 1.f : 0.f);
+                    int thr = 0;
+                    int steer = 0;
+                    inp.thr = (up ? 1.f : 0.f) + (down ? -1.f : 0.f);
+                    inp.steer = (left ? -1.f : 0.f) + (right ? 1.f : 0.f);
+                    inp.id = ++inp_id;
+                    input_history.push_back(inp);
+                    uint8_t header = 0;
+                    for (Input& input : input_history)
+                    {
+                        if (input.id == approved_id)
+                        {
+                            if (input.steer != inp.steer)
+                            {
+                                steer = inp.steer;
+                                header = header | (0b11110000);
+                            }
+                            if (input.thr != inp.thr)
+                            {
+                                thr = inp.thr;
+                                header = header | (0b00001111);
+                            }
+                            
+                            break;
+                        }
+                    }
 
+                    /*uint8_t val = header;
+                    int arr[8] = {0};
+                    for (int i = 0; i < 8; ++i)
+                    {
+                        arr[i] = val % 2;
+                        val /= 2;
+                        std::cout << arr[i] << " ";
+                    }
+                    std::cout << std::endl; */
                     // Send
-                    send_entity_input(serverPeer, my_entity, thr, steer);
+                    send_entity_input(serverPeer, my_entity, inp.thr, inp.steer, header, inp_id, approved_id);
+                    break;
                 }
         }
 
         BeginDrawing();
         ClearBackground(GRAY);
         BeginMode2D(camera);
-        DrawRectangleLines(-16, -8, 32, 16, GetColor(0xff00ffff));
+        DrawRectangleLines(-16, -16, 32, 32, GetColor(0xff00ffff));
         for (const Entity& e : entities)
         {
             const Rectangle rect = { e.x, e.y, 3.f, 1.f };

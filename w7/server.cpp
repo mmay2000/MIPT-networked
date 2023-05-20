@@ -9,6 +9,8 @@
 
 static std::vector<Entity> entities;
 static std::map<uint16_t, ENetPeer*> controlledMap;
+static std::vector<Snapshot> snapshot_history;
+static std::map<uint16_t, uint16_t> approved_snap_id_map; // eid - ac snap_id
 
 void on_join(ENetPacket* packet, ENetPeer* peer, ENetHost* host)
 {
@@ -31,7 +33,7 @@ void on_join(ENetPacket* packet, ENetPeer* peer, ENetHost* host)
     entities.push_back(ent);
 
     controlledMap[newEid] = peer;
-
+    approved_snap_id_map[newEid] = 0;
 
     // send info about new entity to everyone
     for (size_t i = 0; i < host->peerCount; ++i)
@@ -40,22 +42,38 @@ void on_join(ENetPacket* packet, ENetPeer* peer, ENetHost* host)
     send_set_controlled_entity(peer, newEid);
 }
 
-void on_input(ENetPacket* packet)
+void on_input(ENetPacket* packet, ENetPeer* peer)
 {
     uint16_t eid = invalid_entity;
     float thr = 0.f; float steer = 0.f;
-    deserialize_entity_input(packet, eid, thr, steer);
+    uint16_t new_approved_id = 0;
+    deserialize_entity_input(packet, eid, thr, steer, new_approved_id);
     for (Entity& e : entities)
         if (e.eid == eid)
         {
             e.thr = thr;
             e.steer = steer;
         }
+
+    send_input_ac(peer, new_approved_id);
+}
+
+void on_snapshot_id_ac(ENetPacket* packet)
+{
+    uint16_t eid, new_id;
+    deserialize_general_snapshot_ac(packet, eid, new_id);
+    approved_snap_id_map[eid] = new_id;
+    //std::cout << approved_snap_id_map[eid] << std::endl;
 }
 
 int main(int argc, const char** argv)
 {
-    //check_uint32_compression();
+    Snapshot snap;
+    snap.entities = entities;
+    snap.id = 0;
+    
+    std::map<uint16_t, uint8_t> headers;
+
     srand(time(NULL));
     if (enet_initialize() != 0)
     {
@@ -96,7 +114,10 @@ int main(int argc, const char** argv)
                     on_join(event.packet, event.peer, server);
                     break;
                 case E_CLIENT_TO_SERVER_INPUT:
-                    on_input(event.packet);
+                    on_input(event.packet, event.peer);
+                    break;
+                case E_CLIENT_TO_SERVER_AC_SNAPSHOT_ID:
+                    on_snapshot_id_ac(event.packet);
                     break;
                 };
                 enet_packet_destroy(event.packet);
@@ -109,16 +130,52 @@ int main(int argc, const char** argv)
         for (Entity& e : entities)
         {
             // simulate
-            simulate_entity(e, dt);
-            // send
-            for (size_t i = 0; i < server->peerCount; ++i)
+            simulate_entity(e, dt); 
+        }
+
+        snap.entities = entities;
+        snap.id++;
+        snapshot_history.push_back(snap);
+        
+
+        if(!entities.empty())
+        {
+            for (Entity& ent : entities)
             {
-                ENetPeer* peer = &server->peers[i];
-                // skip this here in this implementation
-                //if (controlledMap[e.eid] != peer)
-                send_snapshot(peer, e.eid, e.x, e.y, e.ori);
+                headers.clear();
+                ENetPeer* peer = controlledMap[ent.eid];
+                
+                for (Entity& e : entities)
+                {
+                    // fill headers
+                    uint8_t header = 0;
+
+                    for (Entity& se : snapshot_history.at(approved_snap_id_map[ent.eid]).entities)
+                    {
+                        if (se.eid == e.eid)
+                        {
+                            if (e.x != se.x || e.y != se.y)
+                            {
+                                header = header | 0b11000000;
+                            }
+
+                            if (e.ori != se.ori)
+                            {
+                                header = header | 0b10100000;
+                            }
+
+                            break;
+                        }
+                    }
+                    headers.insert(std::pair<uint16_t, uint8_t>(e.eid, header));
+                }
+
+                send_general_snapshot(peer, entities, headers, snap.id, approved_snap_id_map[ent.eid]);
             }
         }
+
+        
+
         Sleep(100);
     }
 

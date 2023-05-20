@@ -14,4 +14,12 @@ struct Entity
 	uint16_t eid = invalid_entity;
 };
 
+struct Input
+{
+	uint16_t id;
+	float thr;
+	float steer;
+};
+
+
 void simulate_entity(Entity& e, float dt);
