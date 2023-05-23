@@ -208,7 +208,7 @@ void deserialize_set_controlled_entity(ENetPacket* packet, uint16_t& eid)
    // printf("\n%d", a);
 }
 
-void deserialize_entity_input(ENetPacket* packet, uint16_t& eid, float& thr, float& steer, uint16_t new_id)
+void deserialize_entity_input(ENetPacket* packet, uint16_t& eid, float& thr, float& steer, uint16_t& new_id)
 {
     uint16_t based_id;
     uint8_t header;
